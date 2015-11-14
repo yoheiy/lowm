@@ -118,17 +118,32 @@ move_cursor(int n)
    if (n > 0) {
       for (i = cursor + 1; i < nr_clients; i++)
          if (!clients[i].z) break;
+      if (i >= nr_clients) return;
+      if (clients[i].z) return;
    } else {
-      for (i = cursor - 1; i >= 0 ; i--)
+      for (i = cursor; i >= 0 ; i--) /* go to line head */
          if (!clients[i].z) break;
+      for (i--; i >= 0 ; i--)
+         if (!clients[i].z) break;
+      if (i < 0) return;
    }
    cursor = i;
 
-   if (cursor < 0)
-      cursor = 0;
-   if (cursor >= nr_clients)
-      cursor = nr_clients - 1;
+   arrange();
+}
 
+void
+move_cursor_inline(int n)
+{
+   if (n > 0) {
+      if (cursor + 1 >= nr_clients) return;
+      if (!clients[cursor + 1].z) return;
+      cursor++;
+   } else {
+      if (cursor == 0) return;
+      if (!clients[cursor].z) return;
+      cursor--;
+   }
    arrange();
 }
 
@@ -141,6 +156,12 @@ join(void)
       if (!clients[i].z)
          break;
    clients[i].z = 1;
+}
+
+void
+cut(void)
+{
+   clients[cursor].z = 0;
 }
 
 void
@@ -177,16 +198,30 @@ mainloop_body(void)
          clients[cursor].x = 32; }
       else
       if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_J)) {
-         if (e.xkey.state & ShiftMask)
+         if (e.xkey.state & ShiftMask) {
             join();
+            arrange(); }
          else
             move_cursor(1); }
       else
-      if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_K))
-         move_cursor(-1);
+      if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_K)) {
+         if (e.xkey.state & ShiftMask) {
+            cut();
+            arrange(); }
+         else
+            move_cursor(-1); }
       else
-      if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_L))
-         world_y = -clients[cursor].y;
+      if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_L)) {
+         if (e.xkey.state & ShiftMask)
+            world_y = -clients[cursor].y;
+         else
+            move_cursor_inline(1); }
+      else
+      if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_H)) {
+         if (e.xkey.state & ShiftMask)
+            ;
+         else
+            move_cursor_inline(-1); }
       place_world();
       break;
    }
@@ -200,7 +235,7 @@ mainloop(void)
    XSelectInput(Dpy, Root, SubstructureRedirectMask |
                            SubstructureNotifyMask);
 
-   for (c = "BFGJKL"; *c; c++) {
+   for (c = "BFGHJKL"; *c; c++) {
       s[0] = *c;
       XGrabKey(Dpy, XKeysymToKeycode(Dpy, XStringToKeysym(s)), Mod1Mask, Root,
             True, GrabModeAsync, GrabModeAsync);
