@@ -104,7 +104,10 @@ mainloop_body(void)
       if (e.xkey.keycode == XKeysymToKeycode(Dpy, XStringToKeysym("F")))
          world_y -= 100;
       else
+      if (e.xkey.keycode == XKeysymToKeycode(Dpy, XStringToKeysym("B")))
          world_y += 100;
+      else
+         world_y = 0;
       place_world();
       break;
    }
@@ -119,6 +122,8 @@ mainloop(void)
    XGrabKey(Dpy, XKeysymToKeycode(Dpy, XStringToKeysym("F")), Mod1Mask, Root,
             True, GrabModeAsync, GrabModeAsync);
    XGrabKey(Dpy, XKeysymToKeycode(Dpy, XStringToKeysym("B")), Mod1Mask, Root,
+            True, GrabModeAsync, GrabModeAsync);
+   XGrabKey(Dpy, XKeysymToKeycode(Dpy, XStringToKeysym("G")), Mod1Mask, Root,
             True, GrabModeAsync, GrabModeAsync);
 
    for (;;) {
