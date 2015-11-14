@@ -28,13 +28,29 @@ get_geometry_xywh(struct client *c)
 void
 arrange(void)
 {
-   int i, y = 0;
+   int i, x = 0, y = 0, line_height = 0;
    struct client *p;
 
    for (i = 0; i < nr_clients; i++) {
       p = &clients[i];
+
+      if (!p->z) {
+         x = 0;
+         y = y + line_height + gap;
+         line_height = p->h;
+      }
+      else {
+         if (p->h > line_height)
+            line_height = p->h;
+      }
+      p->x = x;
       p->y = y;
-      y += p->h + gap;
+
+      if (i == cursor) {
+         p->x += 32;
+         x    += 32;
+      }
+      x += p->w + gap;
    }
 }
 
@@ -72,6 +88,7 @@ delete_window(Window w)
    for (i = 0; i < nr_clients; i++)
       if (clients[i].id == w)
          break;
+   clients[i + 1].z = 0;
    nr_clients--;
    for (; i < nr_clients; i++)
       clients[i] = clients[i + 1];
@@ -96,7 +113,6 @@ init_clients(void)
 void
 move_cursor(int n)
 {
-   clients[cursor].x = 0;
    cursor += n;
 
    if (cursor < 0)
@@ -104,7 +120,7 @@ move_cursor(int n)
    if (cursor >= nr_clients)
       cursor = nr_clients - 1;
 
-   clients[cursor].x = 32;
+   arrange();
 }
 
 void
