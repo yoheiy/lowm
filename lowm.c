@@ -101,7 +101,7 @@ mainloop_body(void)
       place_world();
       break;
    case KeyPress:
-      if (e.xkey.keycode == XKeysymToKeycode(Dpy, XStringToKeysym("F1")))
+      if (e.xkey.keycode == XKeysymToKeycode(Dpy, XStringToKeysym("F")))
          world_y -= 100;
       else
          world_y += 100;
@@ -115,12 +115,10 @@ mainloop(void)
 {
    XSelectInput(Dpy, Root, SubstructureRedirectMask |
                            SubstructureNotifyMask);
-   XGrabKey(Dpy, 'f', Mod1Mask, Root, True, GrabModeAsync, GrabModeAsync);
-   XGrabKey(Dpy, 'b', Mod1Mask, Root, True, GrabModeAsync, GrabModeAsync);
 
-   XGrabKey(Dpy, XKeysymToKeycode(Dpy, XStringToKeysym("F1")), Mod1Mask, Root,
+   XGrabKey(Dpy, XKeysymToKeycode(Dpy, XStringToKeysym("F")), Mod1Mask, Root,
             True, GrabModeAsync, GrabModeAsync);
-   XGrabKey(Dpy, XKeysymToKeycode(Dpy, XStringToKeysym("F2")), Mod1Mask, Root,
+   XGrabKey(Dpy, XKeysymToKeycode(Dpy, XStringToKeysym("B")), Mod1Mask, Root,
             True, GrabModeAsync, GrabModeAsync);
 
    for (;;) {
