@@ -1,11 +1,11 @@
 #include <X11/Xlib.h>
 #include <X11/keysym.h>
-#include <stdio.h>
 Display *Dpy;
 Window   Root;
 
 struct client {
    Window id;
+   int z; /* =0 if leftmost window of a line */
    int x, y;
    unsigned int w, h, bw; /* geometry */
 } clients[80];
@@ -35,7 +35,6 @@ arrange(void)
       p = &clients[i];
       p->y = y;
       y += p->h + gap;
-printf("%s: %d: y=%d\n", __func__, i, p->y);
    }
 }
 
@@ -47,7 +46,6 @@ place_world(void)
 
    for (i = 0; i < nr_clients; i++) {
       c = clients[i];
-printf("%s: %d: y=%d\n", __func__, i, c.y);
       c.y += world_y;
       XMoveWindow(Dpy, c.id, c.x, c.y);
    }
@@ -60,8 +58,6 @@ newwindow (Window w)
 
    XGetWindowAttributes (Dpy, w, &wattr);
    if (wattr.map_state == IsViewable && wattr.override_redirect == False) {
-printf("%s: %d: %x\n", __func__, nr_clients, (unsigned int)w);
-
       clients[nr_clients].id = w;
       get_geometry_xywh(&clients[nr_clients]);
       nr_clients++;
@@ -98,6 +94,31 @@ init_clients(void)
 }
 
 void
+move_cursor(int n)
+{
+   clients[cursor].x = 0;
+   cursor += n;
+
+   if (cursor < 0)
+      cursor = 0;
+   if (cursor >= nr_clients)
+      cursor = nr_clients - 1;
+
+   clients[cursor].x = 32;
+}
+
+void
+join(void)
+{
+   int i;
+
+   for (i = cursor + 1; i < nr_clients; i++)
+      if (!clients[i].z)
+         break;
+   clients[i].z = 1;
+}
+
+void
 mainloop_body(void)
 {
    XEvent e;
@@ -106,35 +127,41 @@ mainloop_body(void)
    XNextEvent(Dpy, &e);
    switch (e.type) {
    case MapRequest:
-w = e.xmaprequest.window;
+      w = e.xmaprequest.window;
       XMapRaised(Dpy, w);
       newwindow(w);
       arrange();
       place_world();
-printf("new: %x y=%d\n", (unsigned int)w, clients[nr_clients-1].y);
       break;
    case UnmapNotify:
-w = e.xunmap.window;
+      w = e.xunmap.window;
       delete_window(w);
       arrange();
       place_world();
-printf("del: %x\n", (unsigned int)w);
       break;
    case KeyPress:
-      if (e.xkey.keycode == XKeysymToKeycode(Dpy, XStringToKeysym("F")))
+      if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_F))
          world_y -= 100;
       else
-      if (e.xkey.keycode == XKeysymToKeycode(Dpy, XStringToKeysym("B")))
+      if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_B))
          world_y += 100;
       else
-      if (e.xkey.keycode == XKeysymToKeycode(Dpy, XStringToKeysym("G")))
-         world_y = 0;
+      if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_G)) {
+         clients[cursor].x = 0;
+         world_y = cursor = 0;
+         clients[cursor].x = 32; }
       else
-      if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_J))
-         world_y -= 200;
+      if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_J)) {
+         if (e.xkey.state & ShiftMask)
+            join();
+         else
+            move_cursor(1); }
       else
       if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_K))
-         world_y += 200;
+         move_cursor(-1);
+      else
+      if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_L))
+         world_y = -clients[cursor].y;
       place_world();
       break;
    }
@@ -148,11 +175,13 @@ mainloop(void)
    XSelectInput(Dpy, Root, SubstructureRedirectMask |
                            SubstructureNotifyMask);
 
-   for (c = "BFGJK"; *c; c++) {
+   for (c = "BFGJKL"; *c; c++) {
       s[0] = *c;
       XGrabKey(Dpy, XKeysymToKeycode(Dpy, XStringToKeysym(s)), Mod1Mask, Root,
             True, GrabModeAsync, GrabModeAsync);
-      printf("%s ->%x\n", s, XKeysymToKeycode(Dpy, XStringToKeysym(s)));
+      XGrabKey(Dpy, XKeysymToKeycode(Dpy, XStringToKeysym(s)),
+            Mod1Mask | ShiftMask, Root,
+            True, GrabModeAsync, GrabModeAsync);
    }
 
    for (;;) {
@@ -161,7 +190,7 @@ mainloop(void)
 }
 
 int
-xerror (Display *dpy, XErrorEvent *e)
+xerror(Display *dpy, XErrorEvent *e)
 {
    return 0;
 }
@@ -171,11 +200,12 @@ main(void)
 {
    Dpy = XOpenDisplay(NULL);
    if (!Dpy) return 1;
-   Root = DefaultRootWindow (Dpy);
-   XSetErrorHandler (xerror);
+   Root = DefaultRootWindow(Dpy);
+   XSetErrorHandler(xerror);
 
    init_clients();
    arrange();
+   move_cursor(0);
    place_world();
    mainloop();
    XCloseDisplay(Dpy);
