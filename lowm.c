@@ -113,7 +113,16 @@ init_clients(void)
 void
 move_cursor(int n)
 {
-   cursor += n;
+   int i;
+
+   if (n > 0) {
+      for (i = cursor + 1; i < nr_clients; i++)
+         if (!clients[i].z) break;
+   } else {
+      for (i = cursor - 1; i >= 0 ; i--)
+         if (!clients[i].z) break;
+   }
+   cursor = i;
 
    if (cursor < 0)
       cursor = 0;
@@ -221,7 +230,6 @@ main(void)
 
    init_clients();
    arrange();
-   move_cursor(0);
    place_world();
    mainloop();
    XCloseDisplay(Dpy);
