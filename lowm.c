@@ -82,6 +82,48 @@ newwindow (Window w)
 }
 
 void
+paste_window(int n)
+{
+   int i, o;
+
+   if (nr_clients < 2) return;
+
+   if (n < 0 && !clients[cursor].z) {
+      clients[cursor].z = 1;
+      clients[nr_clients - 1].z = 0;
+   } else {
+      clients[nr_clients - 1].z = 1;
+   }
+
+   o = cursor + (n > 0);
+
+   for (i = nr_clients - 1; i >= o; i--)
+      clients[i + 1] = clients[i];
+
+   clients[o] = clients[nr_clients];
+
+   arrange();
+}
+
+void
+cut_window(int n)
+{
+   int i, o;
+
+   if (!clients[cursor].z)
+      clients[cursor + 1].z = 0;
+
+   o = cursor;
+   clients[nr_clients] = clients[o];
+   clients[nr_clients].z = 0;
+
+   for (i = o; i < nr_clients; i++)
+      clients[i] = clients[i + 1];
+
+   arrange();
+}
+
+void
 delete_window(Window w)
 {
    int i;
@@ -228,6 +270,16 @@ mainloop_body(void)
             ;
          else
             move_cursor_inline(-1); }
+      if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_P)) {
+         if (e.xkey.state & ShiftMask)
+            paste_window(-1);
+         else
+            paste_window(1); }
+      if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_X)) {
+         if (e.xkey.state & ShiftMask)
+            ;
+         else
+            cut_window(1); }
       place_world();
       break;
    }
@@ -242,7 +294,7 @@ mainloop(void)
    XSelectInput(Dpy, Root, SubstructureRedirectMask |
                            SubstructureNotifyMask);
 
-   for (c = "BFGHJKL"; *c; c++) {
+   for (c = "BFGHJKLPX"; *c; c++) {
       s[0] = *c;
       XGrabKey(Dpy, XKeysymToKeycode(Dpy, XStringToKeysym(s)), Mod1Mask, Root,
             True, GrabModeAsync, GrabModeAsync);
