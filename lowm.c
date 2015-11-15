@@ -12,6 +12,7 @@ struct size_hint {
 struct client {
    Window id;
    int z; /* =0 if leftmost window of a line */
+   int f; /* fill */
    int x, y;
    unsigned int w, h, bw; /* geometry */
    struct size_hint hints;
@@ -52,10 +53,34 @@ get_size_hints(struct client *c)
    if (c->hints.min_height == 0) c->hints.min_height = 32;
 }
 
+int
+fill_line(int b)
+{
+   struct client *p;
+   int i, a = 0, n = 0;
+
+   for (i = b; i < nr_clients; i++) {
+      p = &clients[i];
+      if (!p->z && i > b) break;
+
+      if (p->f) {
+         a += p->hints.base_width;
+         n++; }
+      else
+         a += p->w;
+
+      if (i == cursor)
+         a += 32;
+   }
+   if (!n) return 0;
+   if (a > screen_width) return 0;
+   return (screen_width - a) / n;
+}
+
 void
 arrange(void)
 {
-   int i, x = 0, y = 0, line_height = 0;
+   int i, x = 0, y = 0, line_height = 0, f;
    struct client *p;
 
    for (i = 0; i < nr_clients; i++) {
@@ -65,11 +90,14 @@ arrange(void)
          x = 0;
          y = y + line_height + gap;
          line_height = p->h + 2 * p->bw;
+         f = fill_line(i);
       }
       else {
          if (p->h + 2 * p->bw > line_height)
             line_height = p->h + 2 * p->bw;
       }
+      if (p->f)
+         p->w = p->hints.base_width + f;
       p->x = x;
       p->y = y;
 
@@ -90,7 +118,7 @@ place_world(void)
    for (i = 0; i < nr_clients; i++) {
       c = clients[i];
       c.y += world_y;
-      XMoveWindow(Dpy, c.id, c.x, c.y);
+      XMoveResizeWindow(Dpy, c.id, c.x, c.y, c.w, c.h);
    }
 }
 
@@ -279,8 +307,12 @@ mainloop_body(void)
       place_world();
       break;
    case KeyPress:
-      if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_F))
-         world_y -= 100;
+      if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_F)) {
+         if (e.xkey.state & ShiftMask) {
+            clients[cursor].f = !clients[cursor].f;
+            arrange(); }
+         else
+            world_y -= 100; }
       else
       if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_B))
          world_y += 100;
