@@ -12,6 +12,7 @@ struct client {
 int nr_clients;
 int world_y;
 int cursor;
+int screen_width, screen_height;
 
 const int gap = 1;
 
@@ -131,6 +132,9 @@ move_cursor(int n)
 
    if (clients[cursor].y + world_y < 0)
       world_y = -clients[cursor].y;
+   else
+   if (clients[cursor].y + clients[cursor].h + world_y > screen_height)
+      world_y = screen_height - (clients[cursor].y + clients[cursor].h);
 
    arrange();
 }
@@ -265,6 +269,9 @@ main(void)
    if (!Dpy) return 1;
    Root = DefaultRootWindow(Dpy);
    XSetErrorHandler(xerror);
+
+   screen_width  = XDisplayWidth(Dpy, DefaultScreen(Dpy));
+   screen_height = XDisplayHeight(Dpy, DefaultScreen(Dpy));
 
    init_clients();
    arrange();
