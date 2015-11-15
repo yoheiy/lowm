@@ -129,6 +129,9 @@ move_cursor(int n)
    }
    cursor = i;
 
+   if (clients[cursor].y + world_y < 0)
+      world_y = -clients[cursor].y;
+
    arrange();
 }
 
