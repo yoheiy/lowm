@@ -38,11 +38,11 @@ arrange(void)
       if (!p->z) {
          x = 0;
          y = y + line_height + gap;
-         line_height = p->h;
+         line_height = p->h + 2 * p->bw;
       }
       else {
-         if (p->h > line_height)
-            line_height = p->h;
+         if (p->h + 2 * p->bw > line_height)
+            line_height = p->h + 2 * p->bw;
       }
       p->x = x;
       p->y = y;
@@ -51,7 +51,7 @@ arrange(void)
          p->x += 32;
          x    += 32;
       }
-      x += p->w + gap;
+      x += p->w + 2 * p->bw + gap;
    }
 }
 
