@@ -1,13 +1,20 @@
 #include <X11/Xlib.h>
+#include <X11/Xutil.h>
 #include <X11/keysym.h>
 Display *Dpy;
 Window   Root;
 
+struct size_hint {
+   int base_width, base_height;
+   int width_inc,  height_inc;
+   int min_width,  min_height;
+};
 struct client {
    Window id;
    int z; /* =0 if leftmost window of a line */
    int x, y;
    unsigned int w, h, bw; /* geometry */
+   struct size_hint hints;
 } clients[80];
 int nr_clients;
 int world_y;
@@ -24,6 +31,25 @@ get_geometry_xywh(struct client *c)
 
    XGetGeometry(Dpy, c->id, &r,
          &c->x, &c->y, &c->w, &c->h, &c->bw, &d);
+}
+
+void
+get_size_hints(struct client *c)
+{
+   XSizeHints hints;
+   long supplied;
+
+   XGetWMNormalHints(Dpy, c->id, &hints, &supplied);
+   c->hints.base_width  = (supplied & PBaseSize) ? hints.base_width  :
+                          (supplied & PMinSize)  ? hints.min_width   : 32;
+   c->hints.base_height = (supplied & PBaseSize) ? hints.base_height :
+                          (supplied & PMinSize)  ? hints.min_height  : 32;
+   c->hints.width_inc   = (supplied & PResizeInc) ? hints.width_inc  : 0;
+   c->hints.height_inc  = (supplied & PResizeInc) ? hints.height_inc : 0;
+   c->hints.min_width   = (supplied & PMinSize)  ? hints.min_width   : 32;
+   c->hints.min_height  = (supplied & PMinSize)  ? hints.min_height  : 32;
+   if (c->hints.min_width  == 0) c->hints.min_width  = 32;
+   if (c->hints.min_height == 0) c->hints.min_height = 32;
 }
 
 void
@@ -77,6 +103,7 @@ newwindow (Window w)
    if (wattr.map_state == IsViewable && wattr.override_redirect == False) {
       clients[nr_clients].id = w;
       get_geometry_xywh(&clients[nr_clients]);
+      get_size_hints(&clients[nr_clients]);
       nr_clients++;
    }
 }
@@ -197,6 +224,23 @@ move_cursor_inline(int n)
 }
 
 void
+resize_window(int n)
+{
+   struct client *p = &clients[cursor];
+
+   if (p->hints.width_inc)
+      p->w += n * p->hints.width_inc;
+   else
+      p->w += n * 32;
+
+   if (p->w < p->hints.min_width) p->w = p->hints.min_width;
+
+   XResizeWindow(Dpy, p->id, p->w, p->h);
+
+   arrange();
+}
+
+void
 join(void)
 {
    int i;
@@ -270,16 +314,24 @@ mainloop_body(void)
             ;
          else
             move_cursor_inline(-1); }
+      else
       if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_P)) {
          if (e.xkey.state & ShiftMask)
             paste_window(-1);
          else
             paste_window(1); }
+      else
       if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_X)) {
          if (e.xkey.state & ShiftMask)
             ;
          else
             cut_window(1); }
+      else
+      if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_N)) {
+         if (e.xkey.state & ShiftMask)
+            resize_window(-1);
+         else
+            resize_window(1); }
       place_world();
       break;
    }
@@ -294,7 +346,7 @@ mainloop(void)
    XSelectInput(Dpy, Root, SubstructureRedirectMask |
                            SubstructureNotifyMask);
 
-   for (c = "BFGHJKLPX"; *c; c++) {
+   for (c = "BFGHJKLPXN"; *c; c++) {
       s[0] = *c;
       XGrabKey(Dpy, XKeysymToKeycode(Dpy, XStringToKeysym(s)), Mod1Mask, Root,
             True, GrabModeAsync, GrabModeAsync);
