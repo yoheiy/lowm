@@ -193,9 +193,8 @@ mainloop_body(void)
          world_y += 100;
       else
       if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_G)) {
-         clients[cursor].x = 0;
          world_y = cursor = 0;
-         clients[cursor].x = 32; }
+         arrange(); }
       else
       if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_J)) {
          if (e.xkey.state & ShiftMask) {
