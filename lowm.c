@@ -227,6 +227,7 @@ mainloop_body(void)
       place_world();
       break;
    }
+   XSetInputFocus(Dpy, clients[cursor].id, RevertToPointerRoot, CurrentTime);
 }
 
 void
