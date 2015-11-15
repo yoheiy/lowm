@@ -59,6 +59,8 @@ fill_line(int b)
    struct client *p;
    int i, a = 0, n = 0;
 
+   a++; /* right gap for debug */
+
    for (i = b; i < nr_clients; i++) {
       p = &clients[i];
       if (!p->z && i > b) break;
@@ -68,6 +70,8 @@ fill_line(int b)
          n++; }
       else
          a += p->w;
+
+      a += 2 * p->bw;
 
       if (i == cursor)
          a += 32;
@@ -96,9 +100,13 @@ arrange(void)
          if (p->h + 2 * p->bw > line_height)
             line_height = p->h + 2 * p->bw;
       }
-      if (p->f)
-         p->w = p->hints.base_width +
-               f / p->hints.width_inc * p->hints.width_inc;
+      if (p->f) {
+         p->w = p->hints.base_width;
+         if (p->hints.width_inc)
+            p->w += f / p->hints.width_inc * p->hints.width_inc;
+         else
+            p->w += f;
+      }
       p->x = x;
       p->y = y;
 
