@@ -97,7 +97,8 @@ arrange(void)
             line_height = p->h + 2 * p->bw;
       }
       if (p->f)
-         p->w = p->hints.base_width + f;
+         p->w = p->hints.base_width +
+               f / p->hints.width_inc * p->hints.width_inc;
       p->x = x;
       p->y = y;
 
