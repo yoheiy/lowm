@@ -18,7 +18,7 @@ struct client {
    struct size_hint hints;
 } clients[80];
 int nr_clients;
-int world_y;
+int world_y, realm_x;
 int cursor;
 int screen_width, screen_height;
 
@@ -81,6 +81,20 @@ fill_line(int b)
    return (screen_width - a) / n;
 }
 
+int
+realm_here(int b)
+{
+   struct client *p;
+   int i;
+
+   for (i = b; i < nr_clients; i++) {
+      p = &clients[i];
+      if (!p->z && i > b) break;
+      if (i == cursor) return 1;
+   }
+   return 0;
+}
+
 void
 arrange(void)
 {
@@ -93,13 +107,11 @@ arrange(void)
       if (!p->z) {
          x = 0;
          y = y + line_height + gap;
-         line_height = p->h + 2 * p->bw;
+         line_height = 0;
          f = fill_line(i);
       }
-      else {
-         if (p->h + 2 * p->bw > line_height)
-            line_height = p->h + 2 * p->bw;
-      }
+      if (p->h + 2 * p->bw > line_height)
+         line_height = p->h + 2 * p->bw;
       if (p->f) {
          p->w = p->hints.base_width;
          if (p->hints.width_inc)
@@ -121,12 +133,17 @@ arrange(void)
 void
 place_world(void)
 {
-   int i;
-   struct client c;
+   int i, realm;
+   struct client *p, c;
 
    for (i = 0; i < nr_clients; i++) {
+      p = &clients[i];
+      if (!p->z)
+         realm = realm_here(i);
       c = clients[i];
       c.y += world_y;
+      if (realm)
+         c.x += realm_x;
       XMoveResizeWindow(Dpy, c.id, c.x, c.y, c.w, c.h);
    }
 }
@@ -241,6 +258,7 @@ move_cursor(int n)
    else
    if (clients[cursor].y + clients[cursor].h + world_y > screen_height)
       world_y = screen_height - (clients[cursor].y + clients[cursor].h);
+   realm_x = 0;
 
    arrange();
 }
@@ -257,6 +275,13 @@ move_cursor_inline(int n)
       if (!clients[cursor].z) return;
       cursor--;
    }
+
+   if (clients[cursor].x + realm_x < 0)
+      realm_x = -clients[cursor].x;
+   else
+   if (clients[cursor].x + clients[cursor].w + realm_x > screen_width)
+      realm_x = screen_width - (clients[cursor].x + clients[cursor].w);
+
    arrange();
 }
 
