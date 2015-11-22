@@ -24,7 +24,7 @@ int world_y, realm_x;
 int cursor;
 int screen_width, screen_height;
 int monocle_mode;
-
+const char * const bind_keys = "BFGHJKLMNPWX";
 const int gap = 1, monocle_gap = 8;
 
 void
@@ -301,16 +301,15 @@ move_cursor_inline(int n)
 }
 
 void
-resize_window(int n)
+resize_window(int x, int y)
 {
    struct client *p = &clients[cursor];
 
-   if (p->hints.width_inc)
-      p->w += n * p->hints.width_inc;
-   else
-      p->w += n * 32;
+   p->w += x * (p->hints.width_inc  ?: 32);
+   p->h += y * (p->hints.height_inc ?: 32);
 
-   if (p->w < p->hints.min_width) p->w = p->hints.min_width;
+   if (p->w < p->hints.min_width)  p->w = p->hints.min_width;
+   if (p->h < p->hints.min_height) p->h = p->hints.min_height;
 
    XResizeWindow(Dpy, p->id, p->w, p->h);
 
@@ -410,9 +409,15 @@ mainloop_body(void)
       else
       if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_N)) {
          if (e.xkey.state & ShiftMask)
-            resize_window(-1);
+            resize_window(0, -1);
          else
-            resize_window(1); }
+            resize_window(-1, 0); }
+      else
+      if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_W)) {
+         if (e.xkey.state & ShiftMask)
+            resize_window(0, 1);
+         else
+            resize_window(1, 0); }
       else
       if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_M)) {
          if (e.xkey.state & ShiftMask)
@@ -436,12 +441,13 @@ mainloop(void)
 void
 select_input(void)
 {
-   char *c, s[2] = "X";
+   const char *c;
+   char s[2] = "X";
 
    XSelectInput(Dpy, Root, SubstructureRedirectMask |
                            SubstructureNotifyMask);
 
-   for (c = "BFGHJKLMNPX"; *c; c++) {
+   for (c = bind_keys; *c; c++) {
       s[0] = *c;
       XGrabKey(Dpy, XKeysymToKeycode(Dpy, XStringToKeysym(s)), Mod1Mask, Root,
             True, GrabModeAsync, GrabModeAsync);
@@ -462,10 +468,10 @@ init_wm(void)
 {
    Dpy = XOpenDisplay(NULL);
    if (!Dpy) exit(1);
-   Root = DefaultRootWindow(Dpy);
-   XSetErrorHandler(xerror);
 
-   screen_width  = XDisplayWidth(Dpy, DefaultScreen(Dpy));
+   XSetErrorHandler(xerror);
+   Root = DefaultRootWindow(Dpy);
+   screen_width  = XDisplayWidth(Dpy,  DefaultScreen(Dpy));
    screen_height = XDisplayHeight(Dpy, DefaultScreen(Dpy));
 }
 
