@@ -57,6 +57,24 @@ get_size_hints(struct client *c)
 }
 
 int
+is_line_head(struct client *p)
+{
+   return !p->z;
+}
+
+void
+make_it_head(struct client *p)
+{
+   p->z = 0;
+}
+
+void
+make_it_rest(struct client *p)
+{
+   p->z = 1;
+}
+
+int
 fill_line(int b)
 {
    struct client *p;
@@ -66,7 +84,7 @@ fill_line(int b)
 
    for (i = b; i < nr_clients; i++) {
       p = &clients[i];
-      if (!p->z && i > b) break;
+      if (is_line_head(p) && i > b) break;
 
       if (p->f) {
          a += p->hints.base_width;
@@ -92,7 +110,7 @@ realm_here(int b)
 
    for (i = b; i < nr_clients; i++) {
       p = &clients[i];
-      if (!p->z && i > b) break;
+      if (is_line_head(p) && i > b) break;
       if (i == cursor) return 1;
    }
    return 0;
@@ -107,7 +125,7 @@ arrange(void)
    for (i = 0; i < nr_clients; i++) {
       p = &clients[i];
 
-      if (!p->z) {
+      if (is_line_head(p)) {
          x = 0;
          y = y + line_height + gap;
          line_height = 0;
@@ -153,7 +171,7 @@ place_world(void)
 
    for (i = 0; i < nr_clients; i++) {
       p = &clients[i];
-      if (!p->z)
+      if (is_line_head(p))
          realm = realm_here(i);
       c = clients[i];
       c.y += world_y;
@@ -184,11 +202,11 @@ paste_window(int n)
 
    if (nr_clients < 2) return;
 
-   if (n < 0 && !clients[cursor].z) {
-      clients[cursor].z = 1;
-      clients[nr_clients - 1].z = 0;
+   if (n < 0 && is_line_head(&clients[cursor])) {
+      make_it_rest(&clients[cursor]);
+      make_it_head(&clients[nr_clients - 1]);
    } else {
-      clients[nr_clients - 1].z = 1;
+      make_it_rest(&clients[nr_clients - 1]);
    }
 
    o = cursor + (n > 0);
@@ -206,12 +224,12 @@ cut_window(int n)
 {
    int i, o;
 
-   if (!clients[cursor].z)
-      clients[cursor + 1].z = 0;
+   if (is_line_head(&clients[cursor]))
+      make_it_head(&clients[cursor]);
 
    o = cursor;
    clients[nr_clients] = clients[o];
-   clients[nr_clients].z = 0;
+   make_it_head(&clients[nr_clients]);
 
    for (i = o; i < nr_clients; i++)
       clients[i] = clients[i + 1];
@@ -227,7 +245,7 @@ delete_window(Window w)
    for (i = 0; i < nr_clients; i++)
       if (clients[i].id == w)
          break;
-   clients[i + 1].z = 0;
+   make_it_head(&clients[i + 1]);
    nr_clients--;
    for (; i < nr_clients; i++)
       clients[i] = clients[i + 1];
@@ -256,14 +274,14 @@ move_cursor(int n)
 
    if (n > 0) {
       for (i = cursor + 1; i < nr_clients; i++)
-         if (!clients[i].z) break;
+         if (is_line_head(&clients[i])) break;
       if (i >= nr_clients) return;
-      if (clients[i].z) return;
+      if (!is_line_head(&clients[i])) return;
    } else {
       for (i = cursor; i >= 0 ; i--) /* go to line head */
-         if (!clients[i].z) break;
+         if (is_line_head(&clients[i])) break;
       for (i--; i >= 0 ; i--)
-         if (!clients[i].z) break;
+         if (is_line_head(&clients[i])) break;
       if (i < 0) return;
    }
    cursor = i;
@@ -283,11 +301,11 @@ move_cursor_inline(int n)
 {
    if (n > 0) {
       if (cursor + 1 >= nr_clients) return;
-      if (!clients[cursor + 1].z) return;
+      if (is_line_head(&clients[cursor + 1])) return;
       cursor++;
    } else {
       if (cursor == 0) return;
-      if (!clients[cursor].z) return;
+      if (is_line_head(&clients[cursor])) return;
       cursor--;
    }
 
@@ -321,16 +339,17 @@ join(void)
 {
    int i;
 
+   /* find next head */
    for (i = cursor + 1; i < nr_clients; i++)
-      if (!clients[i].z)
+      if (is_line_head(&clients[i]))
          break;
-   clients[i].z = 1;
+   make_it_rest(&clients[i]);
 }
 
 void
 cut(void)
 {
-   clients[cursor].z = 0;
+   make_it_head(&clients[cursor]);
 }
 
 void
