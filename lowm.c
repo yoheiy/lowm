@@ -1,6 +1,8 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
+void exit(int status);
+
 Display *Dpy;
 Window   Root;
 
@@ -426,6 +428,14 @@ mainloop_body(void)
 void
 mainloop(void)
 {
+   for (;;) {
+      mainloop_body();
+   }
+}
+
+void
+select_input(void)
+{
    char *c, s[2] = "X";
 
    XSelectInput(Dpy, Root, SubstructureRedirectMask |
@@ -439,10 +449,6 @@ mainloop(void)
             Mod1Mask | ShiftMask, Root,
             True, GrabModeAsync, GrabModeAsync);
    }
-
-   for (;;) {
-      mainloop_body();
-   }
 }
 
 int
@@ -451,20 +457,26 @@ xerror(Display *dpy, XErrorEvent *e)
    return 0;
 }
 
-int
-main(void)
+void
+init_wm(void)
 {
    Dpy = XOpenDisplay(NULL);
-   if (!Dpy) return 1;
+   if (!Dpy) exit(1);
    Root = DefaultRootWindow(Dpy);
    XSetErrorHandler(xerror);
 
    screen_width  = XDisplayWidth(Dpy, DefaultScreen(Dpy));
    screen_height = XDisplayHeight(Dpy, DefaultScreen(Dpy));
+}
 
+int
+main(void)
+{
+   init_wm();
    init_clients();
    arrange();
    place_world();
+   select_input();
    mainloop();
    XCloseDisplay(Dpy);
    return 0;
