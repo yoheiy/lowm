@@ -21,8 +21,9 @@ int nr_clients;
 int world_y, realm_x;
 int cursor;
 int screen_width, screen_height;
+int monocle_mode;
 
-const int gap = 1;
+const int gap = 1, monocle_gap = 8;
 
 void
 get_geometry_xywh(struct client *c)
@@ -135,6 +136,18 @@ place_world(void)
 {
    int i, realm;
    struct client *p, c;
+
+   if (monocle_mode) {
+      int x, y, w, h;
+
+      p = &clients[cursor];
+      x = y = monocle_gap - p->bw;
+      w = screen_width  - 2 * monocle_gap;
+      h = screen_height - 2 * monocle_gap;
+      XMoveResizeWindow(Dpy, p->id, x, y, w, h);
+      XRaiseWindow(Dpy, p->id);
+      return;
+   }
 
    for (i = 0; i < nr_clients; i++) {
       p = &clients[i];
@@ -398,6 +411,12 @@ mainloop_body(void)
             resize_window(-1);
          else
             resize_window(1); }
+      else
+      if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_M)) {
+         if (e.xkey.state & ShiftMask)
+            ;
+         else
+            monocle_mode = !monocle_mode; }
       place_world();
       break;
    }
@@ -412,7 +431,7 @@ mainloop(void)
    XSelectInput(Dpy, Root, SubstructureRedirectMask |
                            SubstructureNotifyMask);
 
-   for (c = "BFGHJKLPXN"; *c; c++) {
+   for (c = "BFGHJKLMNPX"; *c; c++) {
       s[0] = *c;
       XGrabKey(Dpy, XKeysymToKeycode(Dpy, XStringToKeysym(s)), Mod1Mask, Root,
             True, GrabModeAsync, GrabModeAsync);
