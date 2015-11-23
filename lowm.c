@@ -1,6 +1,7 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
+#define MAX(x, y) ((x) > (y) ? (x) : (y))
 void exit(int status);
 
 Display *Dpy;
@@ -126,8 +127,6 @@ apply_hints(struct client *p)
       p->w = bw + xw / wi * wi;
 }
 
-#define MAX(x, y) ((x) > (y) ? (x) : (y))
-
 void
 arrange(void)
 {
@@ -168,14 +167,13 @@ place_world(void)
    struct client *p, c;
 
    if (monocle_mode) {
-      int x, y, w, h;
-
-      p = &clients[cursor];
-      x = y = monocle_gap - p->bw;
-      w = screen_width  - 2 * monocle_gap;
-      h = screen_height - 2 * monocle_gap;
-      XMoveResizeWindow(Dpy, p->id, x, y, w, h);
-      XRaiseWindow(Dpy, p->id);
+      c = clients[cursor];
+      c.x = c.y = monocle_gap - c.bw;
+      c.w = screen_width  - 2 * monocle_gap;
+      c.h = screen_height - 2 * monocle_gap;
+      apply_hints(&c);
+      XMoveResizeWindow(Dpy, c.id, c.x, c.y, c.w, c.h);
+      XRaiseWindow(Dpy, c.id);
       return;
    }
 
