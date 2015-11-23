@@ -260,30 +260,6 @@ newwindow (Window w)
 }
 
 void
-paste_window(int n)
-{
-   int i, o;
-
-   if (nr_clients < 2) return;
-
-   if (n < 0 && is_line_head(&clients[cursor])) {
-      make_it_rest(&clients[cursor]);
-      make_it_head(&clients[nr_clients - 1]);
-   } else {
-      make_it_rest(&clients[nr_clients - 1]);
-   }
-
-   o = cursor + (n > 0);
-
-   for (i = nr_clients - 1; i >= o; i--)
-      clients[i + 1] = clients[i];
-
-   clients[o] = clients[nr_clients];
-
-   arrange();
-}
-
-void
 rotate_left(int b, int l)
 {
    int i;
@@ -296,18 +272,51 @@ rotate_left(int b, int l)
 }
 
 void
+rotate_right(int b, int l)
+{
+   int i;
+
+   for (i = nr_clients - 1; i >= b; i--)
+      clients[i + l] = clients[i];
+
+   for (i = 0; i < l; i++)
+      clients[b + i] = clients[nr_clients + i];
+}
+
+void
+paste_window(int n)
+{
+   int b, l, o;
+
+   if (nr_clients < 2) return;
+
+   b = line_head(nr_clients - 1);
+   l = line_len(b);
+
+   if (n < 0 && is_line_head(&clients[cursor])) {
+      make_it_rest(&clients[cursor]);
+      make_it_head(&clients[b]);
+   } else {
+      make_it_rest(&clients[b]);
+   }
+
+   o = cursor + (n > 0);
+   rotate_right(o, l);
+
+   arrange();
+}
+
+void
 cut_line(int n)
 {
-#if 1
    int b, l;
 
    b = line_head(cursor);
-   l = line_len(cursor);
+   l = line_len(b);
    clients[b].f_kill = 1;
    rotate_left(b, l);
 
    arrange();
-#endif
 }
 
 void
