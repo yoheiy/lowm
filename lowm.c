@@ -95,26 +95,32 @@ int
 fill_line(int b)
 {
    struct client *p;
-   int i, a = 0, n = 0;
+   int i, a = 0;
 
    for (i = b; i < nr_clients; i++) {
       p = &clients[i];
       if (is_line_head(p) && i > b) break;
 
-      if (p->f) {
-         a += p->hints.base_width;
-         n++; }
-      else
-         a += p->w;
-
+      a += p->f ? p->hints.base_width : p->w;
       a += 2 * p->bw + gap;
-
-      if (i == cursor)
-         a += 32;
+      a += 32 * (i == cursor);
    }
-   if (!n) return 0;
    if (a > screen_width) return 0;
-   return (screen_width - a) / n;
+   return screen_width - a;
+}
+
+int
+n_fill(int b)
+{
+   struct client *p;
+   int i, n = 0;
+
+   for (i = b; i < nr_clients; i++) {
+      p = &clients[i];
+      if (is_line_head(p) && i > b) break;
+      if (p->f) n++;
+   }
+   return n;
 }
 
 int
@@ -163,7 +169,7 @@ arrange(void)
          x = 0;
          y = y + line_height + gap;
          line_height = 0;
-         f = fill_line(i);
+         f = fill_line(i) / (n_fill(i) ?: 1);
       }
       window_height = p->h + 2 * p->bw;
       line_height = MAX(line_height, window_height);
