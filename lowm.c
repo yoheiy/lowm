@@ -25,7 +25,7 @@ int cursor;
 int screen_width, screen_height;
 int monocle_mode;
 const char * const bind_keys = "BFGHJKLMNPWX";
-const int gap = 1, monocle_gap = 8;
+const int gap = 8, monocle_gap = 8;
 
 void
 get_geometry_xywh(struct client *c)
@@ -80,8 +80,6 @@ fill_line(int b)
    struct client *p;
    int i, a = 0, n = 0;
 
-   a++; /* right gap for debug */
-
    for (i = b; i < nr_clients; i++) {
       p = &clients[i];
       if (is_line_head(p) && i > b) break;
@@ -92,7 +90,7 @@ fill_line(int b)
       else
          a += p->w;
 
-      a += 2 * p->bw;
+      a += 2 * p->bw + gap;
 
       if (i == cursor)
          a += 32;
@@ -117,9 +115,23 @@ realm_here(int b)
 }
 
 void
+apply_hints(struct client *p)
+{
+   int bw, wi, xw;
+
+   bw = p->hints.base_width;
+   wi = p->hints.width_inc;
+   xw = p->w - bw;
+   if (wi)
+      p->w = bw + xw / wi * wi;
+}
+
+#define MAX(x, y) ((x) > (y) ? (x) : (y))
+
+void
 arrange(void)
 {
-   int i, x = 0, y = 0, line_height = 0, f;
+   int i, x = 0, y = 0, line_height = 0, window_height, f;
    struct client *p;
 
    for (i = 0; i < nr_clients; i++) {
@@ -131,14 +143,12 @@ arrange(void)
          line_height = 0;
          f = fill_line(i);
       }
-      if (p->h + 2 * p->bw > line_height)
-         line_height = p->h + 2 * p->bw;
+      window_height = p->h + 2 * p->bw;
+      line_height = MAX(line_height, window_height);
+
       if (p->f) {
-         p->w = p->hints.base_width;
-         if (p->hints.width_inc)
-            p->w += f / p->hints.width_inc * p->hints.width_inc;
-         else
-            p->w += f;
+         p->w = p->hints.base_width + f;
+         apply_hints(p);
       }
       p->x = x;
       p->y = y;
@@ -173,7 +183,7 @@ place_world(void)
       p = &clients[i];
       if (is_line_head(p))
          realm = realm_here(i);
-      c = clients[i];
+      c = *p;
       c.y += world_y;
       if (realm)
          c.x += realm_x;
@@ -270,6 +280,7 @@ init_clients(void)
 void
 move_cursor(int n)
 {
+   struct client *p;
    int i;
 
    if (n > 0) {
@@ -286,11 +297,19 @@ move_cursor(int n)
    }
    cursor = i;
 
+   p = &clients[cursor];
+
+   if (p->y + world_y < 0)
+      world_y = -p->y;
+   else if (p->y + p->h + world_y > screen_height)
+      world_y = screen_height - (p->y + p->h);
+/*
    if (clients[cursor].y + world_y < 0)
       world_y = -clients[cursor].y;
    else
    if (clients[cursor].y + clients[cursor].h + world_y > screen_height)
       world_y = screen_height - (clients[cursor].y + clients[cursor].h);
+*/
    realm_x = 0;
 
    arrange();
@@ -299,6 +318,8 @@ move_cursor(int n)
 void
 move_cursor_inline(int n)
 {
+   struct client *p = &clients[cursor];
+
    if (n > 0) {
       if (cursor + 1 >= nr_clients) return;
       if (is_line_head(&clients[cursor + 1])) return;
@@ -309,11 +330,17 @@ move_cursor_inline(int n)
       cursor--;
    }
 
+   if (p->x + realm_x < 0)
+      realm_x = -p->x;
+   else if (p->x + p->w + realm_x > screen_width)
+      realm_x = screen_width - (p->x + p->w);
+/*
    if (clients[cursor].x + realm_x < 0)
       realm_x = -clients[cursor].x;
    else
    if (clients[cursor].x + clients[cursor].w + realm_x > screen_width)
       realm_x = screen_width - (clients[cursor].x + clients[cursor].w);
+*/
 
    arrange();
 }
