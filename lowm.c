@@ -293,14 +293,18 @@ paste_window(int n)
    b = line_head(nr_clients - 1);
    l = line_len(b);
 
-   if (n < 0 && is_line_head(&clients[cursor])) {
-      make_it_rest(&clients[cursor]);
-      make_it_head(&clients[b]);
+   if (clients[b].f_kill) {
+      o = line_head(cursor) + (n > 0) * line_len(cursor);
    } else {
-      make_it_rest(&clients[b]);
+      if (n < 0 && is_line_head(&clients[cursor])) {
+         make_it_rest(&clients[cursor]);
+         make_it_head(&clients[b]);
+      } else {
+         make_it_rest(&clients[b]);
+      }
+      o = cursor + (n > 0);
    }
 
-   o = cursor + (n > 0);
    rotate_right(o, l);
 
    arrange();
