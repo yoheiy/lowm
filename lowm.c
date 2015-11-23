@@ -16,6 +16,7 @@ struct client {
    Window id;
    int z; /* =0 if leftmost window of a line */
    int f; /* fill */
+   int f_kill; /* kill */
    int x, y;
    unsigned int w, h, bw; /* geometry */
    struct size_hint hints;
@@ -25,7 +26,7 @@ int world_y, realm_x;
 int cursor;
 int screen_width, screen_height;
 int monocle_mode;
-const char * const bind_keys = "BFGHJKLMNPWX";
+const char * const bind_keys = "BDFGHJKLMNPWX";
 const int gap = 8, monocle_gap = 8;
 
 void
@@ -84,11 +85,11 @@ align(void)
       world_y = -p->y;
    else if (p->y + p->h + world_y > screen_height)
       world_y = screen_height - (p->y + p->h);
-   realm_x = 0;
-   if (p->x + realm_x < 0)
-      realm_x = -p->x;
-   else if (p->x + p->w + realm_x > screen_width)
+
+   if (p->x + p->w > screen_width)
       realm_x = screen_width - (p->x + p->w);
+   else
+      realm_x = 0;
 }
 
 int
@@ -107,6 +108,32 @@ fill_line(int b)
    }
    if (a > screen_width) return 0;
    return screen_width - a;
+}
+
+int
+line_head(int b)
+{
+   struct client *p;
+   int i;
+
+   for (i = b; i > 0; i--) {
+      p = &clients[i];
+      if (is_line_head(p)) break;
+   }
+   return i;
+}
+
+int
+line_len(int b)
+{
+   struct client *p;
+   int i;
+
+   for (i = b; i < nr_clients; i++) {
+      p = &clients[i];
+      if (is_line_head(p) && i > b) break;
+   }
+   return i - b;
 }
 
 int
@@ -257,18 +284,42 @@ paste_window(int n)
 }
 
 void
+rotate_left(int b, int l)
+{
+   int i;
+
+   for (i = 0; i < l; i++)
+      clients[nr_clients + i] = clients[b + i];
+
+   for (i = b; i < nr_clients; i++)
+      clients[i] = clients[i + l];
+}
+
+void
+cut_line(int n)
+{
+#if 1
+   int b, l;
+
+   b = line_head(cursor);
+   l = line_len(cursor);
+   clients[b].f_kill = 1;
+   rotate_left(b, l);
+
+   arrange();
+#endif
+}
+
+void
 cut_window(int n)
 {
-   int i, o;
+   int i;
 
-   if (is_line_head(&clients[cursor]))
-      make_it_head(&clients[cursor]);
+   make_it_head(&clients[cursor]);
+   clients[nr_clients] = clients[cursor];
+   clients[nr_clients].f_kill = 0;
 
-   o = cursor;
-   clients[nr_clients] = clients[o];
-   make_it_head(&clients[nr_clients]);
-
-   for (i = o; i < nr_clients; i++)
+   for (i = cursor; i < nr_clients; i++)
       clients[i] = clients[i + 1];
 
    arrange();
@@ -357,15 +408,23 @@ resize_window(int x, int y)
    arrange();
 }
 
+int
+find_head_next(int b)
+{
+   int i;
+
+   for (i = b + 1; i < nr_clients; i++)
+      if (is_line_head(&clients[i]))
+         break;
+   return i;
+}
+
 void
 join(void)
 {
    int i;
 
-   /* find next head */
-   for (i = cursor + 1; i < nr_clients; i++)
-      if (is_line_head(&clients[i]))
-         break;
+   i = find_head_next(cursor);
    make_it_rest(&clients[i]);
 }
 
@@ -448,6 +507,12 @@ mainloop_body(void)
             ;
          else
             cut_window(1); }
+      else
+      if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_D)) {
+         if (e.xkey.state & ShiftMask)
+            ;
+         else
+            cut_line(1); }
       else
       if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_N)) {
          if (e.xkey.state & ShiftMask)
