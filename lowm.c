@@ -75,6 +75,22 @@ make_it_rest(struct client *p)
    p->z = 1;
 }
 
+void
+align(void)
+{
+   struct client *p = &clients[cursor];
+
+   if (p->y + world_y < 0)
+      world_y = -p->y;
+   else if (p->y + p->h + world_y > screen_height)
+      world_y = screen_height - (p->y + p->h);
+   realm_x = 0;
+   if (p->x + realm_x < 0)
+      realm_x = -p->x;
+   else if (p->x + p->w + realm_x > screen_width)
+      realm_x = screen_width - (p->x + p->w);
+}
+
 int
 fill_line(int b)
 {
@@ -119,12 +135,19 @@ void
 apply_hints(struct client *p)
 {
    int bw, wi, xw;
+   int bh, hi, xh;
 
    bw = p->hints.base_width;
    wi = p->hints.width_inc;
    xw = p->w - bw;
    if (wi)
       p->w = bw + xw / wi * wi;
+
+   bh = p->hints.base_height;
+   hi = p->hints.height_inc;
+   xh = p->h - bh;
+   if (hi)
+      p->h = bh + xh / hi * hi;
 }
 
 void
@@ -278,7 +301,6 @@ init_clients(void)
 void
 move_cursor(int n)
 {
-   struct client *p;
    int i;
 
    if (n > 0) {
@@ -295,29 +317,12 @@ move_cursor(int n)
    }
    cursor = i;
 
-   p = &clients[cursor];
-
-   if (p->y + world_y < 0)
-      world_y = -p->y;
-   else if (p->y + p->h + world_y > screen_height)
-      world_y = screen_height - (p->y + p->h);
-/*
-   if (clients[cursor].y + world_y < 0)
-      world_y = -clients[cursor].y;
-   else
-   if (clients[cursor].y + clients[cursor].h + world_y > screen_height)
-      world_y = screen_height - (clients[cursor].y + clients[cursor].h);
-*/
-   realm_x = 0;
-
    arrange();
 }
 
 void
 move_cursor_inline(int n)
 {
-   struct client *p = &clients[cursor];
-
    if (n > 0) {
       if (cursor + 1 >= nr_clients) return;
       if (is_line_head(&clients[cursor + 1])) return;
@@ -327,19 +332,6 @@ move_cursor_inline(int n)
       if (is_line_head(&clients[cursor])) return;
       cursor--;
    }
-
-   if (p->x + realm_x < 0)
-      realm_x = -p->x;
-   else if (p->x + p->w + realm_x > screen_width)
-      realm_x = screen_width - (p->x + p->w);
-/*
-   if (clients[cursor].x + realm_x < 0)
-      realm_x = -clients[cursor].x;
-   else
-   if (clients[cursor].x + clients[cursor].w + realm_x > screen_width)
-      realm_x = screen_width - (clients[cursor].x + clients[cursor].w);
-*/
-
    arrange();
 }
 
@@ -468,6 +460,7 @@ mainloop_body(void)
             ;
          else
             monocle_mode = !monocle_mode; }
+align();
       place_world();
       break;
    }
