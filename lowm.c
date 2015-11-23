@@ -378,15 +378,19 @@ move_cursor(int n)
          if (is_line_head(&clients[i])) break;
       if (i >= nr_clients) return;
       if (!is_line_head(&clients[i])) return;
+      cursor = i;
    } else {
+      cursor = line_head(cursor);
+      if (cursor) cursor--;
+      cursor = line_head(cursor);
+#if 0
       for (i = cursor; i >= 0 ; i--) /* go to line head */
          if (is_line_head(&clients[i])) break;
       for (i--; i >= 0 ; i--)
          if (is_line_head(&clients[i])) break;
       if (i < 0) return;
+#endif
    }
-   cursor = i;
-
    arrange();
 }
 
