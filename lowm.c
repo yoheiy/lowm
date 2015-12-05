@@ -452,6 +452,82 @@ cut(void)
 }
 
 void
+key_event_handler(char c)
+{
+   switch (c) {
+   case 'F':
+      clients[cursor].f = !clients[cursor].f;
+      arrange();
+      break;
+   case 'f':
+      world_y -= 100;
+      break;
+   case 'b':
+      world_y += 100;
+      break;
+
+   case 'g':
+      world_y = cursor = 0;
+      //arrange();
+      break;
+   case 'j':
+      move_cursor(1);
+      break;
+   case 'k':
+      move_cursor(-1);
+      break;
+   case 'l':
+      move_cursor_inline(1);
+      break;
+   case 'h':
+      move_cursor_inline(-1);
+      break;
+
+   case 'J':
+      join();
+      arrange();
+      break;
+   case 'K':
+      cut();
+      arrange();
+      break;
+   case 'L':
+      world_y = -clients[cursor].y;
+      break;
+
+   case 'x':
+      cut_window(1);
+      break;
+   case 'd':
+      cut_line(1);
+      break;
+   case 'p':
+      paste_window(1);
+      break;
+   case 'P':
+      paste_window(-1);
+      break;
+
+   case 'n':
+      resize_window(-1, 0);
+      break;
+   case 'N':
+      resize_window(0, -1);
+      break;
+   case 'w':
+      resize_window(1, 0);
+      break;
+   case 'W':
+      resize_window(0, 1);
+      break;
+
+   case 'm':
+      monocle_mode = !monocle_mode;
+      break;
+   }
+}
+
+void
 mainloop_body(void)
 {
    XEvent e;
@@ -474,80 +550,82 @@ mainloop_body(void)
       break;
    case KeyPress:
       if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_F)) {
-         if (e.xkey.state & ShiftMask) {
-            clients[cursor].f = !clients[cursor].f;
-            arrange(); }
+         if (e.xkey.state & ShiftMask)
+            key_event_handler('F');
          else
-            world_y -= 100; }
+            key_event_handler('f'); }
       else
-      if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_B))
-         world_y += 100;
+      if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_B)) {
+         if (e.xkey.state & ShiftMask)
+            key_event_handler('B');
+         else
+            key_event_handler('b'); }
       else
       if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_G)) {
-         world_y = cursor = 0;
-         arrange(); }
+         if (e.xkey.state & ShiftMask)
+            key_event_handler('G');
+         else
+            key_event_handler('g'); }
       else
       if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_J)) {
-         if (e.xkey.state & ShiftMask) {
-            join();
-            arrange(); }
+         if (e.xkey.state & ShiftMask)
+            key_event_handler('J');
          else
-            move_cursor(1); }
+            key_event_handler('j'); }
       else
       if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_K)) {
-         if (e.xkey.state & ShiftMask) {
-            cut();
-            arrange(); }
+         if (e.xkey.state & ShiftMask)
+            key_event_handler('K');
          else
-            move_cursor(-1); }
+            key_event_handler('k'); }
       else
       if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_L)) {
          if (e.xkey.state & ShiftMask)
-            world_y = -clients[cursor].y;
+            key_event_handler('L');
          else
-            move_cursor_inline(1); }
+            key_event_handler('l'); }
       else
       if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_H)) {
          if (e.xkey.state & ShiftMask)
-            ;
+            key_event_handler('H');
          else
-            move_cursor_inline(-1); }
+            key_event_handler('h'); }
       else
       if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_P)) {
          if (e.xkey.state & ShiftMask)
-            paste_window(-1);
+            key_event_handler('P');
          else
-            paste_window(1); }
+            key_event_handler('p'); }
       else
       if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_X)) {
          if (e.xkey.state & ShiftMask)
-            ;
+            key_event_handler('X');
          else
-            cut_window(1); }
+            key_event_handler('x'); }
       else
       if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_D)) {
          if (e.xkey.state & ShiftMask)
-            ;
+            key_event_handler('D');
          else
-            cut_line(1); }
+            key_event_handler('d'); }
       else
       if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_N)) {
          if (e.xkey.state & ShiftMask)
-            resize_window(0, -1);
+            key_event_handler('N');
          else
-            resize_window(-1, 0); }
+            key_event_handler('n'); }
       else
       if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_W)) {
          if (e.xkey.state & ShiftMask)
-            resize_window(0, 1);
+            key_event_handler('W');
          else
-            resize_window(1, 0); }
+            key_event_handler('w'); }
       else
       if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_M)) {
          if (e.xkey.state & ShiftMask)
-            ;
+            key_event_handler('M');
          else
-            monocle_mode = !monocle_mode; }
+            key_event_handler('m'); }
 align();
       place_world();
       break;
