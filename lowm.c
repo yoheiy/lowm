@@ -61,6 +61,31 @@ get_size_hints(struct client *c)
    if (c->hints.min_height == 0) c->hints.min_height = 32;
 }
 
+void
+apply_hints(struct client *p)
+{
+   int bw, wi, xw, mw;
+   int bh, hi, xh, mh;
+
+   bw = p->hints.base_width;
+   wi = p->hints.width_inc;
+   xw = p->w - bw;
+   mw = p->hints.min_width;
+   if (wi)
+      p->w = bw + xw / wi * wi;
+   if (p->w < mw)
+      p->w = mw;
+
+   bh = p->hints.base_height;
+   hi = p->hints.height_inc;
+   xh = p->h - bh;
+   mh = p->hints.min_height;
+   if (hi)
+      p->h = bh + xh / hi * hi;
+   if (p->h < mh)
+      p->h = mh;
+}
+
 int
 is_line_head(struct client *p)
 {
@@ -150,31 +175,6 @@ realm_here(int b)
       if (i == cursor) return 1;
    }
    return 0;
-}
-
-void
-apply_hints(struct client *p)
-{
-   int bw, wi, xw, mw;
-   int bh, hi, xh, mh;
-
-   bw = p->hints.base_width;
-   wi = p->hints.width_inc;
-   xw = p->w - bw;
-   mw = p->hints.min_width;
-   if (wi)
-      p->w = bw + xw / wi * wi;
-   if (p->w < mw)
-      p->w = mw;
-
-   bh = p->hints.base_height;
-   hi = p->hints.height_inc;
-   xh = p->h - bh;
-   mh = p->hints.min_height;
-   if (hi)
-      p->h = bh + xh / hi * hi;
-   if (p->h < mh)
-      p->h = mh;
 }
 
 /* world */
