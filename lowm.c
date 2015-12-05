@@ -167,20 +167,26 @@ realm_here(int b)
 void
 apply_hints(struct client *p)
 {
-   int bw, wi, xw;
-   int bh, hi, xh;
+   int bw, wi, xw, mw;
+   int bh, hi, xh, mh;
 
    bw = p->hints.base_width;
    wi = p->hints.width_inc;
    xw = p->w - bw;
+   mw = p->hints.min_width;
    if (wi)
       p->w = bw + xw / wi * wi;
+   if (p->w < mw)
+      p->w = mw;
 
    bh = p->hints.base_height;
    hi = p->hints.height_inc;
    xh = p->h - bh;
+   mh = p->hints.min_height;
    if (hi)
       p->h = bh + xh / hi * hi;
+   if (p->h < mh)
+      p->h = mh;
 }
 
 void
