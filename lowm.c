@@ -260,33 +260,6 @@ arrange(void)
 }
 
 void
-place_icons(int b)
-{
-   int i, x = 0, y;
-   struct client *p, c;
-
-   y = clients[b].y + world_y;
-
-   for (i = b; i < nr_clients; i++) {
-      p = &clients[i];
-      if (is_line_head(p)) {
-         x = left_gap;
-         y += (i > b) * (gap + icon_height);
-      }
-      c = *p;
-      c.x = x;
-      c.y = y;
-      if (i == cursor)
-         c.x += icon_width / 4, x += icon_width / 4;
-      c.w = icon_width;
-      c.h = icon_height;
-      apply_hints(&c);
-      XMoveResizeWindow(Dpy, c.id, c.x, c.y, c.w, c.h);
-      x += icon_width + gap;
-   }
-}
-
-void
 place_world(void)
 {
    int i, realm;
@@ -303,20 +276,19 @@ place_world(void)
       return;
    }
 
-   /* normal clients */
    for (i = 0; i < nr_clients; i++) {
       p = &clients[i];
-      if (is_client_icon(p)) break;
       if (is_line_head(p))
          realm = realm_here(i);
       c = *p;
       c.y += world_y;
       if (realm)
          c.x += realm_x;
+      c.w = cli_w(p);
+      c.h = cli_h(p);
+      apply_hints(&c);
       XMoveResizeWindow(Dpy, c.id, c.x, c.y, c.w, c.h);
    }
-   /* icons */
-   place_icons(i);
 }
 
 /* client list */
