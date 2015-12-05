@@ -17,6 +17,7 @@ struct client {
    int z; /* =0 if leftmost window of a line */
    int f; /* fill */
    int f_kill; /* killed as line */
+   int f_icon; /* this is icon */
    int x, y;
    unsigned int w, h, bw; /* geometry */
    struct size_hint hints;
@@ -102,6 +103,24 @@ void
 make_it_rest(struct client *p)
 {
    p->z = 1;
+}
+
+int
+is_client_icon(struct client *p)
+{
+   return p->f_icon;
+}
+
+void
+make_it_normal(struct client *p)
+{
+   p->f_icon = 0;
+}
+
+void
+make_it_icon(struct client *p)
+{
+   p->f_icon = 1;
 }
 
 /* line */
@@ -228,6 +247,36 @@ arrange(void)
 }
 
 void
+place_icons(int b)
+{
+   int i, realm, x = 0, y;
+   struct client *p, c;
+
+   y = clients[b].y + world_y;
+
+   for (i = b; i < nr_clients; i++) {
+      p = &clients[i];
+      if (is_line_head(p)) {
+         realm = realm_here(i);
+         x = left_gap;
+         y += 60 + gap;
+      }
+      c = *p;
+      c.x = x;
+      c.y = y;
+      if (realm)
+         c.x += realm_x;
+      if (i == cursor)
+         c.y -= 20;
+      c.w = 60;
+      c.h = 60;
+      apply_hints(&c);
+      XMoveResizeWindow(Dpy, c.id, c.x, c.y, c.w, c.h);
+      x += 60 + gap;
+   }
+}
+
+void
 place_world(void)
 {
    int i, realm;
@@ -244,8 +293,10 @@ place_world(void)
       return;
    }
 
+   /* normal clients */
    for (i = 0; i < nr_clients; i++) {
       p = &clients[i];
+      if (is_client_icon(p)) break;
       if (is_line_head(p))
          realm = realm_here(i);
       c = *p;
@@ -254,6 +305,8 @@ place_world(void)
          c.x += realm_x;
       XMoveResizeWindow(Dpy, c.id, c.x, c.y, c.w, c.h);
    }
+   /* icons */
+   place_icons(i);
 }
 
 /* client list */
@@ -262,21 +315,6 @@ list_append(const struct client *new)
 {
    clients[nr_clients] = *new;
    nr_clients++;
-}
-
-void
-newwindow(Window w)
-{
-   XWindowAttributes wattr;
-   struct client new = { 0, };
-
-   XGetWindowAttributes (Dpy, w, &wattr);
-   if (wattr.map_state == IsViewable && wattr.override_redirect == False) {
-      new.id = w;
-      get_geometry_xywh(&new);
-      get_size_hints(&new);
-      list_append(&new);
-   }
 }
 
 void
@@ -306,7 +344,7 @@ rotate_right(int b, int l)
 void
 paste_window(int n)
 {
-   int b, l, o;
+   int b, l, i, o;
 
    if (nr_clients < 2) return;
 
@@ -324,6 +362,8 @@ paste_window(int n)
       }
       o = cursor + (n > 0);
    }
+   for (i = b; i < b + l; i++)
+      make_it_normal(&clients[i]);
 
    rotate_right(o, l);
 
@@ -333,11 +373,15 @@ paste_window(int n)
 void
 cut_line(int n)
 {
-   int b, l;
+   int b, l, i;
 
    b = line_head(cursor);
    l = line_len(b);
+
    clients[b].f_kill = 1;
+   for (i = b; i < b + l; i++)
+      make_it_icon(&clients[i]);
+
    rotate_left(b, l);
 
    arrange();
@@ -355,6 +399,8 @@ cut_window(int n)
       make_it_head(&clients[b]);
 
    clients[b].f_kill = 0;
+   make_it_icon(&clients[b]);
+
    rotate_left(b, l);
 
    arrange();
@@ -372,6 +418,21 @@ delete_window(Window w)
    nr_clients--;
    for (; i < nr_clients; i++)
       clients[i] = clients[i + 1];
+}
+
+void
+newwindow(Window w)
+{
+   XWindowAttributes wattr;
+   struct client new = { 0, };
+
+   XGetWindowAttributes (Dpy, w, &wattr);
+   if (wattr.map_state == IsViewable && wattr.override_redirect == False) {
+      new.id = w;
+      get_geometry_xywh(&new);
+      get_size_hints(&new);
+      list_append(&new);
+   }
 }
 
 void
@@ -483,7 +544,7 @@ key_event_handler(char c)
 
    case 'g':
       world_y = cursor = 0;
-      //arrange();
+      arrange();
       break;
    case 'j':
       move_cursor(1);
