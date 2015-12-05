@@ -150,24 +150,6 @@ cli_h_b(struct client *p)
 
 /* line */
 int
-fill_line(int b)
-{
-   struct client *p;
-   int i, a = left_gap;
-
-   for (i = b; i < nr_clients; i++) {
-      p = &clients[i];
-      if (is_line_head(p) && i > b) break;
-
-      a += p->f ? p->hints.base_width : p->w;
-      a += 2 * p->bw + gap;
-      a += cursor_gap * (i == cursor);
-   }
-   if (a > screen_width) return 0;
-   return screen_width - a;
-}
-
-int
 line_head(int b)
 {
    struct client *p;
@@ -191,6 +173,24 @@ line_len(int b)
       if (is_line_head(p) && i > b) break;
    }
    return i - b;
+}
+
+int
+fill_line(int b)
+{
+   struct client *p;
+   int i, a = left_gap;
+
+   for (i = b; i < nr_clients; i++) {
+      p = &clients[i];
+      if (is_line_head(p) && i > b) break;
+
+      a += p->f ? p->hints.base_width : p->w;
+      a += 2 * p->bw + gap;
+      a += cursor_gap * (i == cursor);
+   }
+   if (a > screen_width) return 0;
+   return screen_width - a;
 }
 
 int
