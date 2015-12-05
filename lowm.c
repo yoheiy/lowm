@@ -31,6 +31,7 @@ const char * const bind_keys = "BDFGHJKLMNPWX";
 
 /* config */
 const int gap = 8, left_gap = 16, monocle_gap = 8;
+const int icon_width = 60, icon_height = 60, cursor_gap = 32;
 
 /* client */
 void
@@ -136,7 +137,7 @@ fill_line(int b)
 
       a += p->f ? p->hints.base_width : p->w;
       a += 2 * p->bw + gap;
-      a += 32 * (i == cursor);
+      a += cursor_gap * (i == cursor);
    }
    if (a > screen_width) return 0;
    return screen_width - a;
@@ -239,8 +240,8 @@ arrange(void)
       p->y = y;
 
       if (i == cursor) {
-         p->x += 32;
-         x    += 32;
+         p->x += cursor_gap;
+         x    += cursor_gap;
       }
       x += p->w + 2 * p->bw + gap;
    }
@@ -258,19 +259,18 @@ place_icons(int b)
       p = &clients[i];
       if (is_line_head(p)) {
          x = left_gap;
-         y += gap;
-         y += (i > b) * 60;
+         y += (i > b) * (gap + icon_height);
       }
       c = *p;
       c.x = x;
       c.y = y;
       if (i == cursor)
-         c.x += 20, x += 20;
-      c.w = 60;
-      c.h = 60;
+         c.x += icon_width / 4, x += icon_width / 4;
+      c.w = icon_width;
+      c.h = icon_height;
       apply_hints(&c);
       XMoveResizeWindow(Dpy, c.id, c.x, c.y, c.w, c.h);
-      x += 60 + gap;
+      x += icon_width + gap;
    }
 }
 
