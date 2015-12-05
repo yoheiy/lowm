@@ -210,15 +210,10 @@ n_fill(int b)
 int
 realm_here(int b)
 {
-   struct client *p;
-   int i;
+   int e;
 
-   for (i = b; i < nr_clients; i++) {
-      p = &clients[i];
-      if (is_line_head(p) && i > b) break;
-      if (i == cursor) return 1;
-   }
-   return 0;
+   e = b + line_len(b);
+   return cursor >= b && cursor < e;
 }
 
 /* world */
