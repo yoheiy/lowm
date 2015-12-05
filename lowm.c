@@ -124,6 +124,18 @@ make_it_icon(struct client *p)
    p->f_icon = 1;
 }
 
+int
+cli_w(struct client *p)
+{
+   return is_client_icon(p) ? icon_width : p->w;
+}
+
+int
+cli_h(struct client *p)
+{
+   return is_client_icon(p) ? icon_height : p->h;
+}
+
 /* line */
 int
 fill_line(int b)
@@ -205,11 +217,11 @@ align(void)
 
    if (p->y + world_y < 0)
       world_y = -p->y;
-   else if (p->y + p->h + 2 * p->bw + world_y > screen_height)
-      world_y = screen_height - (p->y + p->h + 2 * p->bw);
+   else if (p->y + cli_h(p) + 2 * p->bw + world_y > screen_height)
+      world_y = screen_height - (p->y + cli_h(p) + 2 * p->bw);
 
-   if (p->x + p->w + 2 * p->bw > screen_width)
-      realm_x = screen_width - (p->x + p->w + 2 * p->bw);
+   if (p->x + cli_w(p) + 2 * p->bw > screen_width)
+      realm_x = screen_width - (p->x + cli_w(p) + 2 * p->bw);
    else
       realm_x = 0;
 }
@@ -229,7 +241,7 @@ arrange(void)
          line_height = 0;
          f = fill_line(i) / (n_fill(i) ?: 1);
       }
-      window_height = p->h + 2 * p->bw;
+      window_height = cli_h(p) + 2 * p->bw;
       line_height = MAX(line_height, window_height);
 
       if (p->f) {
@@ -243,7 +255,7 @@ arrange(void)
          p->x += cursor_gap;
          x    += cursor_gap;
       }
-      x += p->w + 2 * p->bw + gap;
+      x += cli_w(p) + 2 * p->bw + gap;
    }
 }
 
