@@ -127,13 +127,25 @@ make_it_icon(struct client *p)
 int
 cli_w(struct client *p)
 {
-   return is_client_icon(p) ? icon_width : p->w;
+   return is_client_icon(p) ? icon_width - 2 * p->bw : p->w;
 }
 
 int
 cli_h(struct client *p)
 {
-   return is_client_icon(p) ? icon_height : p->h;
+   return is_client_icon(p) ? icon_height - 2 * p->bw : p->h;
+}
+
+int
+cli_w_b(struct client *p)
+{
+   return is_client_icon(p) ? icon_width : p->w + 2 * p->bw;
+}
+
+int
+cli_h_b(struct client *p)
+{
+   return is_client_icon(p) ? icon_height : p->h + 2 * p->bw;
 }
 
 /* line */
@@ -141,7 +153,7 @@ int
 fill_line(int b)
 {
    struct client *p;
-   int i, a = 0;
+   int i, a = left_gap;
 
    for (i = b; i < nr_clients; i++) {
       p = &clients[i];
@@ -217,11 +229,11 @@ align(void)
 
    if (p->y + world_y < 0)
       world_y = -p->y;
-   else if (p->y + cli_h(p) + 2 * p->bw + world_y > screen_height)
-      world_y = screen_height - (p->y + cli_h(p) + 2 * p->bw);
+   else if (p->y + cli_h_b(p) + world_y > screen_height)
+      world_y = screen_height - (p->y + cli_h_b(p));
 
-   if (p->x + cli_w(p) + 2 * p->bw > screen_width)
-      realm_x = screen_width - (p->x + cli_w(p) + 2 * p->bw);
+   if (p->x + cli_w_b(p) > screen_width)
+      realm_x = screen_width - (p->x + cli_w_b(p));
    else
       realm_x = 0;
 }
@@ -241,7 +253,7 @@ arrange(void)
          line_height = 0;
          f = fill_line(i) / (n_fill(i) ?: 1);
       }
-      window_height = cli_h(p) + 2 * p->bw;
+      window_height = cli_h_b(p);
       line_height = MAX(line_height, window_height);
 
       if (p->f) {
@@ -255,7 +267,7 @@ arrange(void)
          p->x += cursor_gap;
          x    += cursor_gap;
       }
-      x += cli_w(p) + 2 * p->bw + gap;
+      x += cli_w_b(p) + gap;
    }
 }
 
