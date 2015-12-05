@@ -267,21 +267,27 @@ arrange(void)
 }
 
 void
+place_monocle(void)
+{
+   struct client c;
+
+   c = clients[cursor];
+   c.x = c.y = monocle_gap - c.bw;
+   c.w = screen_width  - 2 * monocle_gap;
+   c.h = screen_height - 2 * monocle_gap;
+   apply_hints(&c);
+   XMoveResizeWindow(Dpy, c.id, c.x, c.y, c.w, c.h);
+   XRaiseWindow(Dpy, c.id);
+}
+
+void
 place_world(void)
 {
    int i, realm;
    struct client *p, c;
 
-   if (monocle_mode) {
-      c = clients[cursor];
-      c.x = c.y = monocle_gap - c.bw;
-      c.w = screen_width  - 2 * monocle_gap;
-      c.h = screen_height - 2 * monocle_gap;
-      apply_hints(&c);
-      XMoveResizeWindow(Dpy, c.id, c.x, c.y, c.w, c.h);
-      XRaiseWindow(Dpy, c.id);
-      return;
-   }
+   if (monocle_mode)
+      return place_monocle();
 
    for (i = 0; i < nr_clients; i++) {
       p = &clients[i];
