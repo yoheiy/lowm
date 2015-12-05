@@ -16,7 +16,7 @@ struct client {
    Window id;
    int z; /* =0 if leftmost window of a line */
    int f; /* fill */
-   int f_kill; /* kill */
+   int f_kill; /* killed as line */
    int x, y;
    unsigned int w, h, bw; /* geometry */
    struct size_hint hints;
@@ -346,14 +346,16 @@ cut_line(int n)
 void
 cut_window(int n)
 {
-   int i;
+   int b, l;
 
-   make_it_head(&clients[cursor]);
-   clients[nr_clients] = clients[cursor];
-   clients[nr_clients].f_kill = 0;
+   b = cursor, l = 1;
+   if (is_line_head(&clients[b]))
+      make_it_head(&clients[b + 1]);
+   else
+      make_it_head(&clients[b]);
 
-   for (i = cursor; i < nr_clients; i++)
-      clients[i] = clients[i + 1];
+   clients[b].f_kill = 0;
+   rotate_left(b, l);
 
    arrange();
 }
