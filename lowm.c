@@ -249,7 +249,7 @@ arrange(void)
 void
 place_icons(int b)
 {
-   int i, realm, x = 0, y;
+   int i, x = 0, y;
    struct client *p, c;
 
    y = clients[b].y + world_y;
@@ -257,17 +257,15 @@ place_icons(int b)
    for (i = b; i < nr_clients; i++) {
       p = &clients[i];
       if (is_line_head(p)) {
-         realm = realm_here(i);
          x = left_gap;
-         y += 60 + gap;
+         y += gap;
+         y += (i > b) * 60;
       }
       c = *p;
       c.x = x;
       c.y = y;
-      if (realm)
-         c.x += realm_x;
       if (i == cursor)
-         c.y -= 20;
+         c.x += 20, x += 20;
       c.w = 60;
       c.h = 60;
       apply_hints(&c);
