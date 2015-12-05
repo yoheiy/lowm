@@ -427,17 +427,25 @@ init_clients(void)
    XFree (r_ch);
 }
 
+int
+find_head_next(int b)
+{
+   int i;
+
+   for (i = b + 1; i < nr_clients; i++)
+      if (is_line_head(&clients[i]))
+         break;
+   return i;
+}
+
 void
 move_cursor(int n)
 {
    int i;
 
    if (n > 0) {
-      for (i = cursor + 1; i < nr_clients; i++)
-         if (is_line_head(&clients[i])) break;
-      if (i >= nr_clients) return;
-      if (!is_line_head(&clients[i])) return;
-      cursor = i;
+      i = find_head_next(cursor);
+      if (i < nr_clients) cursor = i;
    } else {
       cursor = line_head(cursor);
       if (cursor) cursor--;
@@ -471,17 +479,6 @@ resize_window(int x, int y)
    if (p->h < p->hints.min_height) p->h = p->hints.min_height;
 
    XResizeWindow(Dpy, p->id, p->w, p->h);
-}
-
-int
-find_head_next(int b)
-{
-   int i;
-
-   for (i = b + 1; i < nr_clients; i++)
-      if (is_line_head(&clients[i]))
-         break;
-   return i;
 }
 
 void
