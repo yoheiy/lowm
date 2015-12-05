@@ -27,8 +27,11 @@ int cursor;
 int screen_width, screen_height;
 int monocle_mode;
 const char * const bind_keys = "BDFGHJKLMNPWX";
-const int gap = 8, monocle_gap = 8;
 
+/* config */
+const int gap = 8, left_gap = 16, monocle_gap = 8;
+
+/* client */
 void
 get_geometry_xywh(struct client *c)
 {
@@ -76,22 +79,7 @@ make_it_rest(struct client *p)
    p->z = 1;
 }
 
-void
-align(void)
-{
-   struct client *p = &clients[cursor];
-
-   if (p->y + world_y < 0)
-      world_y = -p->y;
-   else if (p->y + p->h + world_y > screen_height)
-      world_y = screen_height - (p->y + p->h + 2 * p->bw);
-
-   if (p->x + p->w > screen_width)
-      realm_x = screen_width - (p->x + p->w + 2 * p->bw);
-   else
-      realm_x = 0;
-}
-
+/* line */
 int
 fill_line(int b)
 {
@@ -189,6 +177,23 @@ apply_hints(struct client *p)
       p->h = mh;
 }
 
+/* world */
+void
+align(void)
+{
+   struct client *p = &clients[cursor];
+
+   if (p->y + world_y < 0)
+      world_y = -p->y;
+   else if (p->y + p->h + world_y > screen_height)
+      world_y = screen_height - (p->y + p->h + 2 * p->bw);
+
+   if (p->x + p->w > screen_width)
+      realm_x = screen_width - (p->x + p->w + 2 * p->bw);
+   else
+      realm_x = 0;
+}
+
 void
 arrange(void)
 {
@@ -199,7 +204,7 @@ arrange(void)
       p = &clients[i];
 
       if (is_line_head(p)) {
-         x = 0;
+         x = left_gap;
          y = y + line_height + gap;
          line_height = 0;
          f = fill_line(i) / (n_fill(i) ?: 1);
@@ -251,17 +256,26 @@ place_world(void)
    }
 }
 
+/* client list */
 void
-newwindow (Window w)
+list_append(const struct client *new)
+{
+   clients[nr_clients] = *new;
+   nr_clients++;
+}
+
+void
+newwindow(Window w)
 {
    XWindowAttributes wattr;
+   struct client new = { 0, };
 
    XGetWindowAttributes (Dpy, w, &wattr);
    if (wattr.map_state == IsViewable && wattr.override_redirect == False) {
-      clients[nr_clients].id = w;
-      get_geometry_xywh(&clients[nr_clients]);
-      get_size_hints(&clients[nr_clients]);
-      nr_clients++;
+      new.id = w;
+      get_geometry_xywh(&new);
+      get_size_hints(&new);
+      list_append(&new);
    }
 }
 
@@ -389,13 +403,6 @@ move_cursor(int n)
       cursor = line_head(cursor);
       if (cursor) cursor--;
       cursor = line_head(cursor);
-#if 0
-      for (i = cursor; i >= 0 ; i--) /* go to line head */
-         if (is_line_head(&clients[i])) break;
-      for (i--; i >= 0 ; i--)
-         if (is_line_head(&clients[i])) break;
-      if (i < 0) return;
-#endif
    }
    arrange();
 }
