@@ -204,10 +204,10 @@ align(void)
 
    if (p->y + world_y < 0)
       world_y = -p->y;
-   else if (p->y + p->h + world_y > screen_height)
+   else if (p->y + p->h + 2 * p->bw + world_y > screen_height)
       world_y = screen_height - (p->y + p->h + 2 * p->bw);
 
-   if (p->x + p->w > screen_width)
+   if (p->x + p->w + 2 * p->bw > screen_width)
       realm_x = screen_width - (p->x + p->w + 2 * p->bw);
    else
       realm_x = 0;
