@@ -348,8 +348,6 @@ paste_window(int n)
       make_it_normal(&clients[i]);
 
    rotate_right(o, l);
-
-   arrange();
 }
 
 void
@@ -365,8 +363,6 @@ cut_line(int n)
       make_it_icon(&clients[i]);
 
    rotate_left(b, l);
-
-   arrange();
 }
 
 void
@@ -384,8 +380,6 @@ cut_window(int n)
    make_it_icon(&clients[b]);
 
    rotate_left(b, l);
-
-   arrange();
 }
 
 void
@@ -449,7 +443,6 @@ move_cursor(int n)
       if (cursor) cursor--;
       cursor = line_head(cursor);
    }
-   arrange();
 }
 
 void
@@ -464,7 +457,6 @@ move_cursor_inline(int n)
       if (is_line_head(&clients[cursor])) return;
       cursor--;
    }
-   arrange();
 }
 
 void
@@ -479,8 +471,6 @@ resize_window(int x, int y)
    if (p->h < p->hints.min_height) p->h = p->hints.min_height;
 
    XResizeWindow(Dpy, p->id, p->w, p->h);
-
-   arrange();
 }
 
 int
@@ -513,21 +503,6 @@ void
 key_event_handler(char c)
 {
    switch (c) {
-   case 'F':
-      clients[cursor].f = !clients[cursor].f;
-      arrange();
-      break;
-   case 'f':
-      world_y -= 100;
-      break;
-   case 'b':
-      world_y += 100;
-      break;
-
-   case 'g':
-      world_y = cursor = 0;
-      arrange();
-      break;
    case 'j':
       move_cursor(1);
       break;
@@ -540,17 +515,15 @@ key_event_handler(char c)
    case 'h':
       move_cursor_inline(-1);
       break;
+   case 'g':
+      world_y = cursor = 0;
+      break;
 
    case 'J':
       join();
-      arrange();
       break;
    case 'K':
       cut();
-      arrange();
-      break;
-   case 'L':
-      world_y = -clients[cursor].y;
       break;
 
    case 'x':
@@ -579,10 +552,24 @@ key_event_handler(char c)
       resize_window(0, 1);
       break;
 
+   case 'L':
+      world_y = -clients[cursor].y;
+      return; /* no need to arrange */
+   case 'f':
+      world_y -= 100;
+      return; /* no need to arrange */
+   case 'b':
+      world_y += 100;
+      return; /* no need to arrange */
+
    case 'm':
       monocle_mode = !monocle_mode;
+      return; /* no need to arrange */
+   case 'F':
+      clients[cursor].f = !clients[cursor].f;
       break;
    }
+   arrange();
 }
 
 char
