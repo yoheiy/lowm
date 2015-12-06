@@ -699,7 +699,7 @@ void
 map_req_event_handler(Window w)
 {
    if (!newwindow(w)) return;
-   rotate_right(cursor + 1, 1);
+   rotate_right(find_head_next(cursor), 1);
    arrange();
    place_world();
    XMapRaised(Dpy, w);
