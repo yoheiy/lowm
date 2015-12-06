@@ -403,10 +403,12 @@ delete_window(Window w)
    for (i = 0; i < nr_clients; i++)
       if (clients[i].id == w)
          break;
-   make_it_head(&clients[i + 1]);
+   if (is_line_head(&clients[i]))
+      make_it_head(&clients[i + 1]);
+   rotate_left(i, 1);
    nr_clients--;
-   for (; i < nr_clients; i++)
-      clients[i] = clients[i + 1];
+
+   if (cursor == nr_clients) cursor--;
 }
 
 void
