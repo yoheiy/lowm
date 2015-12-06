@@ -408,22 +408,42 @@ delete_window(Window w)
    rotate_left(i, 1);
    nr_clients--;
 
-   if (cursor == nr_clients) cursor--;
+   if (i < cursor) cursor--;
 }
 
-void
+int
 newwindow(Window w)
 {
    XWindowAttributes wattr;
    struct client new = { 0, };
 
    XGetWindowAttributes (Dpy, w, &wattr);
-   if (wattr.map_state == IsViewable && wattr.override_redirect == False) {
-      new.id = w;
-      get_geometry_xywh(&new);
-      get_size_hints(&new);
-      list_append(&new);
-   }
+   if (wattr.override_redirect == True)
+      return 0;
+
+   new.id = w;
+   get_geometry_xywh(&new);
+   get_size_hints(&new);
+   list_append(&new);
+   return 1;
+}
+
+void
+new_window(Window w)
+{
+   XWindowAttributes wattr;
+   struct client new = { 0, };
+
+   XGetWindowAttributes (Dpy, w, &wattr);
+   if (wattr.override_redirect == True)
+      return;
+   if (wattr.map_state != IsViewable)
+      return;
+
+   new.id = w;
+   get_geometry_xywh(&new);
+   get_size_hints(&new);
+   list_append(&new);
 }
 
 void
@@ -437,7 +457,7 @@ init_clients(void)
       return;
 
    for (i = 0; i < n_ch; i++)
-      newwindow (r_ch[i]);
+      new_window(r_ch[i]);
 
    XFree (r_ch);
 }
@@ -678,8 +698,8 @@ key_convert(XEvent e)
 void
 map_req_event_handler(Window w)
 {
-   newwindow(w);
-   rotate_right(cursor, 1);
+   if (!newwindow(w)) return;
+   rotate_right(cursor + 1, 1);
    arrange();
    place_world();
    XMapRaised(Dpy, w);
@@ -690,6 +710,7 @@ unmap_event_handler(Window w)
 {
    delete_window(w);
    arrange();
+   align();
    place_world();
 }
 
