@@ -514,6 +514,8 @@ cut(void)
 void
 key_event_handler(char c)
 {
+   int no_arrange = 0;
+
    switch (c) {
    case 'j':
       move_cursor(1);
@@ -566,22 +568,28 @@ key_event_handler(char c)
 
    case 'L':
       world_y = -clients[cursor].y;
-      return; /* no need to arrange */
+      no_arrange = 1;
+      break;
    case 'f':
       world_y -= 100;
-      return; /* no need to arrange */
+      no_arrange = 1;
+      break;
    case 'b':
       world_y += 100;
-      return; /* no need to arrange */
+      no_arrange = 1;
+      break;
 
    case 'm':
       monocle_mode = !monocle_mode;
-      return; /* no need to arrange */
+      no_arrange = 1;
+      break;
    case 'F':
       clients[cursor].f = !clients[cursor].f;
       break;
    }
-   arrange();
+   if (!no_arrange) arrange();
+   align();
+   place_world();
 }
 
 char
@@ -668,30 +676,38 @@ key_convert(XEvent e)
 }
 
 void
+map_req_event_handler(Window w)
+{
+   newwindow(w);
+   rotate_right(cursor, 1);
+   arrange();
+   place_world();
+   XMapRaised(Dpy, w);
+}
+
+void
+unmap_event_handler(Window w)
+{
+   delete_window(w);
+   arrange();
+   place_world();
+}
+
+void
 mainloop_body(void)
 {
    XEvent e;
-   Window w;
 
    XNextEvent(Dpy, &e);
    switch (e.type) {
    case MapRequest:
-      w = e.xmaprequest.window;
-      XMapRaised(Dpy, w);
-      newwindow(w);
-      arrange();
-      place_world();
+      map_req_event_handler(e.xmaprequest.window);
       break;
    case UnmapNotify:
-      w = e.xunmap.window;
-      delete_window(w);
-      arrange();
-      place_world();
+      unmap_event_handler(e.xunmap.window);
       break;
    case KeyPress:
       key_event_handler(key_convert(e));
-      align();
-      place_world();
       break;
    }
    XSetInputFocus(Dpy, clients[cursor].id, RevertToPointerRoot, CurrentTime);
