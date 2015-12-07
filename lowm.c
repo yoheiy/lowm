@@ -403,6 +403,8 @@ delete_window(Window w)
    for (i = 0; i < nr_clients; i++)
       if (clients[i].id == w)
          break;
+   if (i == nr_clients) return;
+
    if (is_line_head(&clients[i]))
       make_it_head(&clients[i + 1]);
    rotate_left(i, 1);
