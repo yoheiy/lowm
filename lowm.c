@@ -222,6 +222,8 @@ align(void)
 {
    struct client *p = &clients[cursor];
 
+if (nr_clients == 0) return;
+
    if (p->y + world_y < 0)
       world_y = -p->y;
    else if (p->y + cli_h_b(p) + world_y > screen_height)
@@ -270,6 +272,8 @@ void
 place_monocle(void)
 {
    struct client c;
+
+if (nr_clients == 0) return;
 
    c = clients[cursor];
    c.x = c.y = monocle_gap - c.bw;
@@ -368,6 +372,8 @@ cut_line(int n)
 {
    int b, l, i;
 
+if (nr_clients == 0) return;
+
    b = line_head(cursor);
    l = line_len(b);
 
@@ -383,11 +389,14 @@ cut_window(int n)
 {
    int b, l;
 
+if (nr_clients == 0) return;
+
    b = cursor, l = 1;
    if (is_line_head(&clients[b]))
       make_it_head(&clients[b + 1]);
    else
       make_it_head(&clients[b]);
+      //cursor--;
 
    clients[b].f_kill = 0;
    make_it_icon(&clients[b]);
@@ -403,7 +412,7 @@ delete_window(Window w)
    for (i = 0; i < nr_clients; i++)
       if (clients[i].id == w)
          break;
-   if (i == nr_clients) return;
+   if (i == nr_clients) return; /* not found */
 
    if (is_line_head(&clients[i]))
       make_it_head(&clients[i + 1]);
@@ -411,6 +420,7 @@ delete_window(Window w)
    nr_clients--;
 
    if (i < cursor) cursor--;
+   if (cursor == nr_clients) cursor--;
 }
 
 int
@@ -422,6 +432,8 @@ newwindow(Window w)
    XGetWindowAttributes (Dpy, w, &wattr);
    if (wattr.override_redirect == True)
       return 0;
+
+   if (nr_clients == 0) cursor = 0;
 
    new.id = w;
    get_geometry_xywh(&new);
@@ -509,6 +521,8 @@ resize_window(int x, int y)
 {
    struct client *p = &clients[cursor];
 
+if (nr_clients == 0) return;
+
    p->w += x * (p->hints.width_inc  ?: 32);
    p->h += y * (p->hints.height_inc ?: 32);
 
@@ -523,6 +537,8 @@ join(void)
 {
    int i;
 
+if (nr_clients == 0) return;
+
    i = find_head_next(cursor);
    make_it_rest(&clients[i]);
 }
@@ -530,6 +546,8 @@ join(void)
 void
 cut(void)
 {
+if (nr_clients == 0) return;
+
    make_it_head(&clients[cursor]);
 }
 
@@ -703,6 +721,7 @@ map_req_event_handler(Window w)
    if (!newwindow(w)) return;
    rotate_right(find_head_next(cursor), 1);
    arrange();
+   align();
    place_world();
    XMapRaised(Dpy, w);
 }
