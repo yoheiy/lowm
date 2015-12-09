@@ -717,6 +717,12 @@ unmap_event_handler(Window w)
 }
 
 void
+set_focus(void)
+{
+   XSetInputFocus(Dpy, clients[cursor].id, RevertToPointerRoot, CurrentTime);
+}
+
+void
 mainloop_body(void)
 {
    XEvent e;
@@ -733,13 +739,13 @@ mainloop_body(void)
       key_event_handler(key_convert(e));
       break;
    }
-   XSetInputFocus(Dpy, clients[cursor].id, RevertToPointerRoot, CurrentTime);
 }
 
 void
 mainloop(void)
 {
    for (;;) {
+      set_focus();
       mainloop_body();
    }
 }
