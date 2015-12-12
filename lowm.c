@@ -562,78 +562,78 @@ if (nr_clients == 0) return;
 }
 
 void
-key_event_handler(char c)
+key_event_handler(KeySym k)
 {
    int no_arrange = 0;
 
-   switch (c) {
-   case 'j':
+   switch (k) {
+   case XK_j:
       move_cursor(1);
       break;
-   case 'k':
+   case XK_k:
       move_cursor(-1);
       break;
-   case 'l':
+   case XK_l:
       move_cursor_inline(1);
       break;
-   case 'h':
+   case XK_h:
       move_cursor_inline(-1);
       break;
-   case 'g':
+   case XK_g:
       world_y = cursor = 0;
       break;
 
-   case 'J':
+   case XK_J:
       join();
       break;
-   case 'K':
+   case XK_K:
       cut();
       break;
 
-   case 'x':
+   case XK_x:
       cut_window(1);
       break;
-   case 'd':
+   case XK_d:
       cut_line(1);
       break;
-   case 'p':
+   case XK_p:
       paste_window(1);
       break;
-   case 'P':
+   case XK_P:
       paste_window(-1);
       break;
 
-   case 'n':
+   case XK_n:
       resize_window(-1, 0);
       break;
-   case 'N':
+   case XK_N:
       resize_window(0, -1);
       break;
-   case 'w':
+   case XK_w:
       resize_window(1, 0);
       break;
-   case 'W':
+   case XK_W:
       resize_window(0, 1);
       break;
 
-   case 'L':
+   case XK_L:
       world_y = -clients[cursor].y;
       no_arrange = 1;
       break;
-   case 'f':
+   case XK_f:
       world_y -= 100;
       no_arrange = 1;
       break;
-   case 'b':
+   case XK_b:
       world_y += 100;
       no_arrange = 1;
       break;
 
-   case 'm':
+   case XK_m:
       monocle_mode = !monocle_mode;
       no_arrange = 1;
       break;
-   case 'F':
+   case XK_F:
       fill_mode = !fill_mode;
       no_arrange = 1;
       //clients[cursor].f = !clients[cursor].f;
@@ -644,87 +644,16 @@ key_event_handler(char c)
    place_world();
 }
 
-char
+KeySym
 key_convert(XEvent e)
 {
-   if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_F)) {
-      if (e.xkey.state & ShiftMask)
-         return('F');
-      else
-         return('f'); }
-   else
-   if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_B)) {
-      if (e.xkey.state & ShiftMask)
-         return('B');
-      else
-         return('b'); }
-   else
-   if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_G)) {
-      if (e.xkey.state & ShiftMask)
-         return('G');
-      else
-         return('g'); }
-   else
-   if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_J)) {
-      if (e.xkey.state & ShiftMask)
-         return('J');
-      else
-         return('j'); }
-   else
-   if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_K)) {
-      if (e.xkey.state & ShiftMask)
-         return('K');
-      else
-         return('k'); }
-   else
-   if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_L)) {
-      if (e.xkey.state & ShiftMask)
-         return('L');
-      else
-         return('l'); }
-   else
-   if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_H)) {
-      if (e.xkey.state & ShiftMask)
-         return('H');
-      else
-         return('h'); }
-   else
-   if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_P)) {
-      if (e.xkey.state & ShiftMask)
-         return('P');
-      else
-         return('p'); }
-   else
-   if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_X)) {
-      if (e.xkey.state & ShiftMask)
-         return('X');
-      else
-         return('x'); }
-   else
-   if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_D)) {
-      if (e.xkey.state & ShiftMask)
-         return('D');
-      else
-         return('d'); }
-   else
-   if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_N)) {
-      if (e.xkey.state & ShiftMask)
-         return('N');
-      else
-         return('n'); }
-   else
-   if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_W)) {
-      if (e.xkey.state & ShiftMask)
-         return('W');
-      else
-         return('w'); }
-   else
-   if (e.xkey.keycode == XKeysymToKeycode(Dpy, XK_M)) {
-      if (e.xkey.state & ShiftMask)
-         return('M');
-      else
-         return('m'); }
-   return ' ';
+   KeySym k;
+   int a;
+
+   a = e.xkey.state & ShiftMask ? 1 : 0;
+   k = XLookupKeysym(&e.xkey, a);
+
+   return k;
 }
 
 void
