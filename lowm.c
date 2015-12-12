@@ -497,6 +497,22 @@ find_head_next(int b)
    return i;
 }
 
+int
+find_last_line(void)
+{
+   int i, l = 0;
+   struct client *p;
+
+   for (i = 0; i < nr_clients; i++) {
+      p = &clients[i];
+      if (is_client_icon(p))
+         break;
+      if (is_line_head(p))
+         l = i;
+   }
+   return l;
+}
+
 void
 move_cursor(int n)
 {
@@ -581,6 +597,9 @@ key_event_handler(KeySym k)
       break;
    case XK_g:
       world_y = cursor = 0;
+      break;
+   case XK_G:
+      cursor = find_last_line();
       break;
 
    case XK_J:
