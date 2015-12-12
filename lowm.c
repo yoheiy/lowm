@@ -26,7 +26,7 @@ int nr_clients;
 int world_y, realm_x;
 int cursor;
 int screen_width, screen_height;
-int monocle_mode;
+int monocle_mode, fill_mode;
 const char * const bind_keys = "BDFGHJKLMNPWX";
 
 /* config */
@@ -284,6 +284,12 @@ if (nr_clients == 0) return;
    XRaiseWindow(Dpy, c.id);
 }
 
+int
+is_line_tail(int i)
+{
+   return i + 1 == nr_clients || is_line_head(&clients[i + 1]);
+}
+
 void
 place_world(void)
 {
@@ -303,6 +309,10 @@ place_world(void)
          c.x += realm_x;
       c.w = cli_w(p);
       c.h = cli_h(p);
+
+      if (fill_mode && is_line_tail(i))
+         c.w = MAX(c.w, screen_width - c.x - gap);
+
       apply_hints(&c);
       XMoveResizeWindow(Dpy, c.id, c.x, c.y, c.w, c.h);
    }
@@ -624,7 +634,9 @@ key_event_handler(char c)
       no_arrange = 1;
       break;
    case 'F':
-      clients[cursor].f = !clients[cursor].f;
+      fill_mode = !fill_mode;
+      no_arrange = 1;
+      //clients[cursor].f = !clients[cursor].f;
       break;
    }
    if (!no_arrange) arrange();
