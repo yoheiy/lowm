@@ -310,7 +310,7 @@ place_world(void)
       c.w = cli_w(p);
       c.h = cli_h(p);
 
-      if (fill_mode && is_line_tail(i))
+      if (fill_mode && is_line_tail(i) && !is_client_icon(p))
          c.w = MAX(c.w, screen_width - c.x - gap);
 
       apply_hints(&c);
