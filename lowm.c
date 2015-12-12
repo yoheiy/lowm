@@ -27,7 +27,7 @@ int world_y, realm_x;
 int cursor;
 int screen_width, screen_height;
 int monocle_mode, fill_mode;
-const char * const bind_keys = "BDFGHJKLMNPWX";
+const char * const bind_keys = "4BDFGHJKLMNPWX";
 
 /* config */
 const int gap = 8, left_gap = 16, monocle_gap = 8;
@@ -600,6 +600,9 @@ key_event_handler(KeySym k)
       break;
    case XK_G:
       cursor = find_last_line();
+      break;
+   case XK_dollar:
+      cursor = find_head_next(cursor) - 1;
       break;
 
    case XK_J:
